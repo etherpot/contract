@@ -6,10 +6,13 @@ contract Lotto {
     uint constant public ticketPrice = 1;
     // the cost of each ticket in wei. Again, 1 is chosen mostly for development purchases and the real price will be closer to 1 ether.
 
+    function getBlocksPerRound() constant returns(uint){ return blocksPerRound; }
+    function getTicketPrice() constant returns(uint){ return ticketPrice; }
+    //accessors for constants
 
     struct Round {
         address[] tickets;
-        uint totalAmount;
+        uint jackpot;
         bool isFinalized;
     }
     mapping(uint => Round) rounds;
@@ -53,7 +56,7 @@ contract Lotto {
         //Rounds can only be finalized once we've moved on to the next round
 
         var winner = calculateWinnerForRound(roundIndex);
-        winner.send(rounds[roundIndex].totalAmount);
+        winner.send(rounds[roundIndex].jackpot);
         //Send the winner their earnings
 
         rounds[roundIndex].isFinalized = true;
@@ -68,8 +71,8 @@ contract Lotto {
         return rounds[roundIndex].tickets;
     }
 
-    function getTotalAmount(uint roundIndex) constant returns(uint){
-        return rounds[roundIndex].totalAmount;
+    function getJackpot(uint roundIndex) constant returns(uint){
+        return rounds[roundIndex].jackpot;
     }
 
     function() {
@@ -91,7 +94,7 @@ contract Lotto {
             //fill new slots in the tickets array with the purchasers addresses
         }
 
-        rounds[roundIndex].totalAmount+=msg.value;
+        rounds[roundIndex].jackpot+=msg.value;
         //add the value of the transaction to the total amount
 
     }

@@ -9,7 +9,9 @@ app.run(function($rootScope,$interval){
 	$rootScope.blockNumber = web3.eth.blockNumber
 	$rootScope.buyers
 
-	var blocksPerRound = 10
+	$rootScope.blocksPerRound = Lotto.getBlocksPerRound()
+	$rootScope.ticketPrice = Lotto.getTicketPrice()
+
 
 	$rootScope.$watch('account',function(account){
 		$rootScope.balance = web3.eth.getBalance(account).toString(10)
@@ -21,7 +23,8 @@ app.run(function($rootScope,$interval){
 	},300)
 
 	$rootScope.$watch('blockNumber',function(blockNumber){
-		$rootScope.round = Math.floor(blockNumber/blocksPerRound)
+		$rootScope.roundIndex = Lotto.getRoundIndex();
+		$rootScope.totalAmount = Lotto.getTotalAmount($rootScope.roundIndex);
 	})
 
 	function updateBuyers(){

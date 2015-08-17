@@ -6,6 +6,9 @@ contract Lotto {
     uint constant public ticketPrice = 1;
     // the cost of each ticket in wei. Again, 1 is chosen mostly for development purchases and the real price will be closer to 1 ether.
 
+    function getBlocksPerRound() constant returns(uint){ return blocksPerRound; }
+    function getTicketPrice() constant returns(uint){ return ticketPrice; }
+    //accessors for constants
 
     struct Round {
         address[] tickets;

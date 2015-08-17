@@ -6,7 +6,7 @@
   </head>
   <body ng-app="app">
     <div class="container">
-      <h1>EtherPot.io</h1>
+      <h1>EtherPot</h1>
       <p>The world's first and only decentralized, autonomous, provably fair lottery</p>
       <div class="container">
         <div class="row">
@@ -34,8 +34,11 @@
             <table class="table">
               <tr>
                 <td>
-                  Round ##{{round}} - {{blockNumber%Lotto.blocksPerRound}} Blocks left
+                  Round #{{round}} - {{blockNumber%blocksPerRound}} blocks left in this round
                 <td>
+                <td>
+                  The current JackPot is {{totalAmount}} Wei
+                </td>
               </tr>
             </table>
           </div>

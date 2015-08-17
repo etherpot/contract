@@ -6,7 +6,7 @@ app.run(function($rootScope,$interval){
 	$rootScope.blockNumber = web3.eth.blockNumber
 	$rootScope.buyers
 
-	var blocksPerRound = 6800
+	var blocksPerRound = 10
 
 	$rootScope.$watch('account',function(account){
 		$rootScope.balance = web3.eth.getBalance(account).toString(10)

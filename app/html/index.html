@@ -8,40 +8,38 @@
     <div class="container">
       <h1>EtherPot.io</h1>
       <p>The world's first and only decentralized, autonomous, provably fair lottery</p>
-      <table class="table">
-        <tr>
-          <td>
-            Your Account
-          </td>
-          <td>
-            <select class="form-control" ng-options="account for account in accounts" ng-model="account"></select>
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Your Balance
-          </td>
-          <td>
-           {{balance}} Wei
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Current Block Number
-          </td>
-          <td>
-           {{blockNumber}}
-          </td>
-        </tr>
-        <tr>
-          <td>
-            Current Round
-          </td>
-          <td>
-           {{round}}
-          </td>
-        </tr>
-      </table>
-    </div>
+      <div class="container">
+        <div class="row">
+          <div class="col-sm-6">
+             <table class="table">
+              <tr>
+                <td>
+                  Your Account
+                </td>
+                <td>
+                  <select class="form-control" ng-options="account for account in accounts" ng-model="account"></select>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  Your Balance
+                </td>
+                <td>
+                 {{balance}} Wei
+                </td>
+              </tr>
+            </table>           
+          </div>
+          <div class="col-sm-6">
+            <table class="table">
+              <tr>
+                <td>
+                  Round ##{{round}} - {{blockNumber%Lotto.blocksPerRound}} Blocks left
+                <td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
   </body>
 </html>

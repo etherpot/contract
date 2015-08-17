@@ -1,6 +1,9 @@
 var app = angular.module('app',[])
 
 app.run(function($rootScope,$interval){
+	$rootScope.web3 = web3
+	$rootScope.Lotto = Lotto
+
 	$rootScope.accounts = web3.eth.accounts
 	$rootScope.account = web3.eth.defaultAccount
 	$rootScope.blockNumber = web3.eth.blockNumber

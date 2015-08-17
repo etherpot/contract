@@ -1,16 +1,16 @@
 contract Lotto {
     
-    uint constant blocksPerRound=10;
+    uint constant public blocksPerRound=10;
     // there are an infinite number of rounds (just like a real lottery that takes place every week). `blocksPerRound` decides how many blocks each round will last. 10 is chosen mostly for development purposes and the real lottery will last much longer.
 
-    uint constant ticketPrice = 1;
+    uint constant public ticketPrice = 1;
     // the cost of each ticket in wei. Again, 1 is chosen mostly for development purchases and the real price will be closer to 1 ether.
 
 
     struct Round {
         address[] tickets;
         uint totalAmount;
-        bool wasFinalized;
+        bool isFinalized;
     }
     mapping(uint => Round) rounds;
     //the contract maintains a mapping of rounds. Each round maintains a list of tickets, the total amount of the pot, and whether or not the round was "finalized". "Finalization" is the act of paying out the pot to the winner.
@@ -19,6 +19,12 @@ contract Lotto {
         //The round index tells us which round we're on. For example if we're on block 24, we're on round 2. Division in Solidity automatically rounds down, so we don't need to worry about decimals.
         
         return block.number/blocksPerRound;
+    }
+
+    function getIsFinalized(uint roundIndex) constant returns (bool){
+        //Determine if a given.
+        
+        return rounds[roundIndex].isFinalized;
     }
 
     function calculateWinnerForRound(uint roundIndex) constant returns(address){
@@ -38,7 +44,7 @@ contract Lotto {
     }
 
     function finalizeRound(uint roundIndex){
-        if(rounds[roundIndex].wasFinalized)
+        if(rounds[roundIndex].isFinalized)
             return;
         //Rounds can only be finalized once. This is to prevent double payouts
 
@@ -50,7 +56,7 @@ contract Lotto {
         winner.send(rounds[roundIndex].totalAmount);
         //Send the winner their earnings
 
-        rounds[roundIndex].wasFinalized = true;
+        rounds[roundIndex].isFinalized = true;
         //Mark the round as finalized
     }
 

@@ -1,6 +1,6 @@
-var app = angular.module('app',[])
+var app = angular.module('app',['ui.bootstrap'])
 
-app.run(function($rootScope,$interval){
+app.run(function($rootScope,$interval,$modal){
 	$rootScope.web3 = web3
 	$rootScope.Lotto = Lotto
 
@@ -23,16 +23,25 @@ app.run(function($rootScope,$interval){
 	},300)
 
 	$rootScope.$watch('blockNumber',function(blockNumber){
-		$rootScope.roundIndex = Lotto.getRoundIndex();
-		$rootScope.totalAmount = Lotto.getTotalAmount($rootScope.roundIndex);
+		$rootScope.roundIndex = Lotto.getRoundIndex()
+		$rootScope.jackpot = Lotto.getJackpot($rootScope.roundIndex)
+		$rootScope.blocksLeft = blockNumber%$rootScope.blocksPerRound
+		$rootScope.eta = 1000*$rootScope.blocksLeft*12.7
 	})
 
-	function updateBuyers(){
-		var buyerAddresses = Lotto.getBuyerAddresses()
-			,buyers = {}
-
-		buyerAddresses.forEach(function(buyerAddress){
-			buyers[buyerAddress] = Lotto.getBalance(buyerAddress)
-		})
+	$rootScope.open = function () {
+	    var modalInstance = $modal.open({
+	      templateUrl: 'ticketModal',
+	      controller: 'TicketController',
+	      resolve: {
+	        items: function () {
+	          return [];
+	        }
+	      }
+	    });
 	}
+})
+
+app.controller('TicketController',function($scope){
+	$scope.ticketsCount = 1;
 })

@@ -11,6 +11,7 @@ module.exports = (grunt) ->
       js:
         src: [
           "app/components/angular/angular.min.js"
+          ,"app/components/angular-bootstrap/ui-bootstrap-tpls.min.js"
           ,"app/js/**/*.js"
         ]
 

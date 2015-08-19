@@ -6,6 +6,8 @@ contract Lotto {
     uint constant public ticketPrice = 1;
     // the cost of each ticket in wei. Again, 1 is chosen mostly for development purchases and the real price will be closer to 1 ether.
 
+    uint constant public blockReward = 5000000000000000000;
+
     function getBlocksPerRound() constant returns(uint){ return blocksPerRound; }
     function getTicketPrice() constant returns(uint){ return ticketPrice; }
     //accessors for constants
@@ -13,7 +15,7 @@ contract Lotto {
     struct Round {
         address[] tickets;
         uint jackpot;
-        bool isFinalized;
+        mapping(uint=>bool) isFinalized;
     }
     mapping(uint => Round) rounds;
     //the contract maintains a mapping of rounds. Each round maintains a list of tickets, the total amount of the pot, and whether or not the round was "finalized". "Finalization" is the act of paying out the pot to the winner.
@@ -24,17 +26,17 @@ contract Lotto {
         return block.number/blocksPerRound;
     }
 
-    function getIsFinalized(uint roundIndex) constant returns (bool){
+    function getIsFinalized(uint roundIndex,uint subroundIndex) constant returns (bool){
         //Determine if a given.
         
-        return rounds[roundIndex].isFinalized;
+        return rounds[roundIndex].isFinalized[subroundIndex];
     }
 
-    function calculateWinnerForRound(uint roundIndex) constant returns(address){
+
+    function calculateWinner(uint roundIndex, uint subroundIndex) constant returns(address){
         //note this function only calculates the winners. It does not do any state changes and therefore does not include various validitiy checks
 
-        var decisionBlockNumber = (roundIndex+1)*blocksPerRound;
-        //The winner of every round is decided by the first block of the next round
+        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subroundIndex);
 
         if(decisionBlockNumber>block.number)
             return;
@@ -46,20 +48,44 @@ contract Lotto {
         return rounds[roundIndex].tickets[winningTicketIndex];
     }
 
-    function finalizeRound(uint roundIndex){
-        if(rounds[roundIndex].isFinalized)
-            return;
-        //Rounds can only be finalized once. This is to prevent double payouts
+    function getDecisionBlockNumber(uint roundIndex,uint subroundIndex) returns (uint){
+        return ((roundIndex+1)*blocksPerRound)+subroundIndex;
+    }
 
-        if(roundIndex>=getRoundIndex())
-            return;
-        //Rounds can only be finalized once we've moved on to the next round
+    function getMaxSubroundIndex(uint roundIndex) returns(uint){
+        var maxSubroundIndex = rounds[roundIndex].jackpot/blockReward;
 
-        var winner = calculateWinnerForRound(roundIndex);
-        winner.send(rounds[roundIndex].jackpot);
+        if(rounds[roundIndex].jackpot%blockReward>0)
+            maxSubroundIndex++;
+
+        return maxSubroundIndex;
+    }
+
+    function finalize(uint roundIndex, uint subroundIndex){
+
+        var maxSubroundIndex = getMaxSubroundIndex(roundIndex);
+
+        if(subroundIndex>maxSubroundIndex)
+            return;
+
+        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subroundIndex);
+
+        if(decisionBlockNumber>block.number)
+            return;
+
+        if(rounds[roundIndex].isFinalized[subroundIndex])
+            return;
+        //Subrounds can only be finalized once. This is to prevent double payouts
+
+        var winner = calculateWinner(roundIndex,subroundIndex);      
+
+        if(subroundIndex<maxSubroundIndex)
+            winner.send(blockReward);
+        else 
+            winner.send(rounds[roundIndex].jackpot%blockReward);
         //Send the winner their earnings
 
-        rounds[roundIndex].isFinalized = true;
+        rounds[roundIndex].isFinalized[subroundIndex] = true;
         //Mark the round as finalized
     }
 

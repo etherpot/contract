@@ -1,10 +1,10 @@
 contract Lotto {
     
-    uint constant public blocksPerRound=10;
+    uint constant public blocksPerRound = 10;
     // there are an infinite number of rounds (just like a real lottery that takes place every week). `blocksPerRound` decides how many blocks each round will last. 10 is chosen mostly for development purposes and the real lottery will last much longer.
 
-    uint constant public ticketPrice = 1;
-    // the cost of each ticket in wei. Again, 1 is chosen mostly for development purchases and the real price will be closer to 1 ether.
+    uint constant public ticketPrice = 100000000000000000;
+    // the cost of each ticket is .1 ether.
 
     uint constant public blockReward = 5000000000000000000;
 
@@ -14,11 +14,11 @@ contract Lotto {
 
     struct Round {
         address[] tickets;
-        uint jackpot;
-        mapping(uint=>bool) isFinalized;
+        uint pot;
+        mapping(uint=>bool) isCashed;
     }
     mapping(uint => Round) rounds;
-    //the contract maintains a mapping of rounds. Each round maintains a list of tickets, the total amount of the pot, and whether or not the round was "finalized". "Finalization" is the act of paying out the pot to the winner.
+    //the contract maintains a mapping of rounds. Each round maintains a list of tickets, the total amount of the pot, and whether or not the round was "cashed". "Cashing" is the act of paying out the pot to the winner.
 
     function getRoundIndex() constant returns (uint){
         //The round index tells us which round we're on. For example if we're on block 24, we're on round 2. Division in Solidity automatically rounds down, so we don't need to worry about decimals.
@@ -26,67 +26,69 @@ contract Lotto {
         return block.number/blocksPerRound;
     }
 
-    function getIsFinalized(uint roundIndex,uint subroundIndex) constant returns (bool){
+    function getIsCashed(uint roundIndex,uint subpotIndex) constant returns (bool){
         //Determine if a given.
         
-        return rounds[roundIndex].isFinalized[subroundIndex];
+        return rounds[roundIndex].isCashed[subpotIndex];
     }
 
 
-    function calculateWinner(uint roundIndex, uint subroundIndex) constant returns(address){
+    function calculateWinner(uint roundIndex, uint subpotIndex) constant returns(address){
         //note this function only calculates the winners. It does not do any state changes and therefore does not include various validitiy checks
 
-        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subroundIndex);
+        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subpotIndex);
 
         if(decisionBlockNumber>block.number)
             return;
         //We can't decided the winner if the round isn't over yet
 
-        var winningTicketIndex = getHashOfBlock(decisionBlockNumber)%rounds[roundIndex].tickets.length;
+        var decisionBlockHash = getHashOfBlock(decisionBlockNumber);
+        var winningTicketIndex = decisionBlockHash%rounds[roundIndex].tickets.length;
         //We perform a modulus of the blockhash to determine the winner
 
         return rounds[roundIndex].tickets[winningTicketIndex];
     }
 
-    function getDecisionBlockNumber(uint roundIndex,uint subroundIndex) returns (uint){
-        return ((roundIndex+1)*blocksPerRound)+subroundIndex;
+    function getDecisionBlockNumber(uint roundIndex,uint subpotIndex) constant returns (uint){
+        return ((roundIndex+1)*blocksPerRound)+subpotIndex;
     }
 
-    function getMaxSubroundIndex(uint roundIndex) returns(uint){
-        var maxSubroundIndex = rounds[roundIndex].jackpot/blockReward;
+    function getSubpotsCount(uint roundIndex) constant returns(uint){
+        var subpotsCount = rounds[roundIndex].pot/blockReward;
 
-        if(rounds[roundIndex].jackpot%blockReward>0)
-            maxSubroundIndex++;
+        if(rounds[roundIndex].pot%blockReward>0)
+            subpotsCount++;
 
-        return maxSubroundIndex;
+        return subpotsCount;
     }
 
-    function finalize(uint roundIndex, uint subroundIndex){
+    function getSubpot(uint roundIndex) constant returns(uint){
+        return rounds[roundIndex].pot/getSubpotsCount(roundIndex);
+    }
 
-        var maxSubroundIndex = getMaxSubroundIndex(roundIndex);
+    function cash(uint roundIndex, uint subpotIndex){
 
-        if(subroundIndex>maxSubroundIndex)
+        var subpotsCount = getSubpotsCount(roundIndex);
+
+        if(subpotIndex>=subpotsCount)
             return;
 
-        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subroundIndex);
+        var decisionBlockNumber = getDecisionBlockNumber(roundIndex,subpotIndex);
 
         if(decisionBlockNumber>block.number)
             return;
 
-        if(rounds[roundIndex].isFinalized[subroundIndex])
+        if(rounds[roundIndex].isCashed[subpotIndex])
             return;
-        //Subrounds can only be finalized once. This is to prevent double payouts
+        //Subpots can only be cashed once. This is to prevent double payouts
 
-        var winner = calculateWinner(roundIndex,subroundIndex);      
+        var winner = calculateWinner(roundIndex,subpotIndex);    
+        var subpot = getSubpot(roundIndex);
 
-        if(subroundIndex<maxSubroundIndex)
-            winner.send(blockReward);
-        else 
-            winner.send(rounds[roundIndex].jackpot%blockReward);
-        //Send the winner their earnings
+        winner.send(subpot);
 
-        rounds[roundIndex].isFinalized[subroundIndex] = true;
-        //Mark the round as finalized
+        rounds[roundIndex].isCashed[subpotIndex] = true;
+        //Mark the round as cashed
     }
 
     function getHashOfBlock(uint blockIndex) constant returns(uint){
@@ -97,17 +99,24 @@ contract Lotto {
         return rounds[roundIndex].tickets;
     }
 
-    function getJackpot(uint roundIndex) constant returns(uint){
-        return rounds[roundIndex].jackpot;
+    function getPot(uint roundIndex) constant returns(uint){
+        return rounds[roundIndex].pot;
     }
 
     function() {
         //this is the function that gets called when people send money to the contract.
 
         var roundIndex = getRoundIndex();
+        var value = msg.value-(msg.value%ticketPrice);
 
-        var ticketsCount = msg.value/ticketPrice;
-        //Solidity automatically rounds down, so we don't need to worry about decimals
+        if(value==0) return;
+
+        if(value<msg.value){
+            msg.sender.send(msg.value-value);
+        }
+        //no partial tickets, offer a partial refund 
+
+        var ticketsCount = value/ticketPrice;
 
         var ticketsLength = rounds[roundIndex].tickets.length;
         //Amount of tickets sold in this round BEFORE the new tickets are added
@@ -120,7 +129,7 @@ contract Lotto {
             //fill new slots in the tickets array with the purchasers addresses
         }
 
-        rounds[roundIndex].jackpot+=msg.value;
+        rounds[roundIndex].pot+=value;
         //add the value of the transaction to the total amount
 
     }

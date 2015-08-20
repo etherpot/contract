@@ -9,7 +9,7 @@ app.run(function($rootScope,$interval,$modal){
 	$rootScope.blockNumber = web3.eth.blockNumber
 	$rootScope.buyers
 
-	$rootScope.blocksPerRound = Lotto.getBlocksPerRound()
+	$rootScope.blocksPerRound = Lotto.getBlocksPerRound().toNumber()
 	$rootScope.ticketPrice = Lotto.getTicketPrice()
 
 
@@ -24,8 +24,8 @@ app.run(function($rootScope,$interval,$modal){
 
 	$rootScope.$watch('blockNumber',function(blockNumber){
 		$rootScope.roundIndex = Lotto.getRoundIndex()
-		$rootScope.jackpot = Lotto.getJackpot($rootScope.roundIndex)
-		$rootScope.blocksLeft = blockNumber%$rootScope.blocksPerRound
+		$rootScope.pot = Lotto.getPot($rootScope.roundIndex)
+		$rootScope.blocksLeft = $rootScope.blocksPerRound-(blockNumber%$rootScope.blocksPerRound)
 		$rootScope.eta = 1000*$rootScope.blocksLeft*12.7
 	})
 

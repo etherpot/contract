@@ -26,7 +26,9 @@ staging:
     address:
 production:
   rpc_host: localhost
-  rpc_port: 8101
+  gas_price: 50000000000
+  gas_limit: 3141592
+  rpc_port: 8545
   rpc_whitelist: "*"
   datadir: default
   network_id: 1

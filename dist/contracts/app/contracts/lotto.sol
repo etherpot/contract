@@ -1,7 +1,7 @@
 contract Lotto {
     
-    uint constant public blocksPerRound = 10;
-    // there are an infinite number of rounds (just like a real lottery that takes place every week). `blocksPerRound` decides how many blocks each round will last. 10 is chosen mostly for development purposes and the real lottery will last much longer.
+    uint constant public blocksPerRound = 6800;
+    // there are an infinite number of rounds (just like a real lottery that takes place every week). `blocksPerRound` decides how many blocks each round will last. 6800 is around a day.
 
     uint constant public ticketPrice = 100000000000000000;
     // the cost of each ticket is .1 ether.

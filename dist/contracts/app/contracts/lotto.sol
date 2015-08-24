@@ -13,9 +13,11 @@ contract Lotto {
     //accessors for constants
 
     struct Round {
-        address[] tickets;
+        address[] buyers;
         uint pot;
+        uint ticketsCount;
         mapping(uint=>bool) isCashed;
+        mapping(address=>uint) ticketsCountByBuyer;
     }
     mapping(uint => Round) rounds;
     //the contract maintains a mapping of rounds. Each round maintains a list of tickets, the total amount of the pot, and whether or not the round was "cashed". "Cashing" is the act of paying out the pot to the winner.
@@ -43,10 +45,19 @@ contract Lotto {
         //We can't decided the winner if the round isn't over yet
 
         var decisionBlockHash = getHashOfBlock(decisionBlockNumber);
-        var winningTicketIndex = decisionBlockHash%rounds[roundIndex].tickets.length;
+        var winningTicketIndex = decisionBlockHash%rounds[roundIndex].ticketsCount;
         //We perform a modulus of the blockhash to determine the winner
 
-        return rounds[roundIndex].tickets[winningTicketIndex];
+        var ticketIndex = uint256(0);
+
+        for(var buyerIndex = 0; buyerIndex<rounds[roundIndex].buyers.length; buyerIndex++){
+            var buyer = rounds[roundIndex].buyers[buyerIndex];
+            ticketIndex+=rounds[roundIndex].ticketsCountByBuyer[buyer];
+
+            if(ticketIndex>winningTicketIndex){
+                return buyer;
+            }
+        }
     }
 
     function getDecisionBlockNumber(uint roundIndex,uint subpotIndex) constant returns (uint){
@@ -94,16 +105,20 @@ contract Lotto {
     function getHashOfBlock(uint blockIndex) constant returns(uint){
         return uint(block.blockhash(blockIndex));
     }
+    
+    function getBuyers(uint roundIndex,address buyer) constant returns (address[]){
+        return rounds[roundIndex].buyers;
+    }
 
-    function getTickets(uint roundIndex) constant returns (address[]){
-        return rounds[roundIndex].tickets;
+    function getTicketsCountByBuyer(uint roundIndex,address buyer) constant returns (uint){
+        return rounds[roundIndex].ticketsCountByBuyer[buyer];
     }
 
     function getPot(uint roundIndex) constant returns(uint){
         return rounds[roundIndex].pot;
     }
 
-    function() {
+    function buyTickets() {
         //this is the function that gets called when people send money to the contract.
 
         var roundIndex = getRoundIndex();
@@ -114,23 +129,22 @@ contract Lotto {
         if(value<msg.value){
             msg.sender.send(msg.value-value);
         }
-        //no partial tickets, offer a partial refund 
+        //no partial tickets, send a partial refund 
 
         var ticketsCount = value/ticketPrice;
+        rounds[roundIndex].ticketsCount+=ticketsCount;
 
-        var ticketsLength = rounds[roundIndex].tickets.length;
-        //Amount of tickets sold in this round BEFORE the new tickets are added
-
-        rounds[roundIndex].tickets.length = rounds[roundIndex].tickets.length+ticketsCount;
-        //we need to increase the length of the tickets array to make room for new tickets
-
-        for(var i = 0; i<ticketsCount;i++){
-            rounds[roundIndex].tickets[ticketsLength+i]=msg.sender;
-            //fill new slots in the tickets array with the purchasers addresses
+        if(rounds[roundIndex].ticketsCountByBuyer[msg.sender]==0){
+            var buyersLength = rounds[roundIndex].buyers.length++;
+            rounds[roundIndex].buyers[buyersLength] = msg.sender;
         }
 
+        rounds[roundIndex].ticketsCountByBuyer[msg.sender]+=ticketsCount;
+        rounds[roundIndex].ticketsCount+=ticketsCount;
+        //keep track of the total tickets
+
         rounds[roundIndex].pot+=value;
-        //add the value of the transaction to the total amount
+        //keep track of the total pot
 
     }
 

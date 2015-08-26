@@ -118,7 +118,7 @@ contract Lotto {
         return rounds[roundIndex].pot;
     }
 
-    function buyTickets() {
+    function() {
         //this is the function that gets called when people send money to the contract.
 
         var roundIndex = getRoundIndex();
